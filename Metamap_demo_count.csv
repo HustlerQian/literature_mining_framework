@@ -1,0 +1,14 @@
+item1,item2,n
+Stomach cancer,MET,3
+Stomach cancer,HBEGF,1
+Stomach cancer,P4HB,1
+Stomach cancer,EGF,1
+Stomach cancer,EGFR,1
+Esophageal cancer,MET,1
+Colorectal cancer,MET,1
+Stomach cancer,IL2,1
+Esophageal cancer,IL2,1
+Colorectal cancer,IL2,1
+Stomach cancer,CD4,1
+Esophageal cancer,CD4,1
+Colorectal cancer,CD4,1

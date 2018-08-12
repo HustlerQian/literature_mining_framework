@@ -10,10 +10,10 @@ source('./R/xmlTovec2.R')
 
 
 
-path_data <- './cas9'
+path_data <- './cas9_medline'
 #batch_pubmed_download
 if(!dir.exists(path_data)){dir.create(path_data)}
-query <- 'crispr[All]'
+query <- 'crispr[All] AND 1997/08:2017/08[DP]'
 # '"clustered regularly interspaced short palindromic repeats"[MeSH Terms] OR 
 # ("clustered"[All Fields] AND "regularly"[All Fields] 
 # AND "interspaced"[All Fields] AND "short"[All Fields] 
@@ -24,10 +24,10 @@ query <- 'crispr[All]'
 #query <- 'Solid Phase MicroExtraction[MH] AND 1997/08:2017/08[DP]'
 
 #Downloading
-# out <- batch_pubmed_download(pubmed_query_string = query, 
-#                              dest_file_prefix = "raw", batch_size = 200, 
-#                              dest_dir = './cas9/')
-out <- list.files(path = './cas9/', pattern = "*.xml",full.names = T)
+ out <- batch_pubmed_download(pubmed_query_string = query, 
+                              dest_file_prefix = "raw", batch_size = 200, format = 'medline',
+                              dest_dir = path_data)
+out <- list.files(path = path_data, pattern = "*.xml",full.names = T)
 
 paperdf <- tibble()
 for (i in 1:length(out)){

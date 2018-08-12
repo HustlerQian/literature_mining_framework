@@ -1,0 +1,101 @@
+---
+title: "Summary for MetaMap Concept Extraction"
+output: html_notebook
+---
+
+```{r eval = F ,echo = FALSE , warning=FALSE}
+library(tidyverse)
+setwd('D:/GitHub/literature_mining_framework/')
+output_path <- "./output/GI_metamap/"
+load('./GI.RData')
+```
+
+# Summary for GI.tdf 
+```{r}
+GI.tdf <- GI.tdf %>%
+  select(PMID,Concept,Count)
+
+GI_summary.tdf <- GI.tdf %>%
+  filter(!Concept %in% c('Bile duct cancer','Colorectal cancer','Esophageal cancer','Liver cancer','Pancreatic Cancer','Stomach cancer')) %>%
+  group_by(Concept) %>%
+  summarise(n = sum(Count)) %>%
+  #arrange(n)
+  arrange(desc(n))
+
+GI_summary.tdf
+```
+#Most gene counts in all corpus
+```{r}
+GI_genes_counts.tdf <- GI.tdf %>%
+  filter(!Concept %in% c('Bile duct cancer','Colorectal cancer','Esophageal cancer','Liver cancer','Pancreatic Cancer','Stomach cancer')) %>%
+  arrange(desc(Count))
+
+GI_genes_counts.tdf
+```
+
+#Average genes by articles
+```{r}
+GI_mean_gene_by_articles.tdf <- GI.tdf %>%
+  filter(!Concept %in% c('Bile duct cancer','Colorectal cancer','Esophageal cancer','Liver cancer','Pancreatic Cancer','Stomach cancer')) %>%
+  group_by(PMID) %>%
+  summarise(gene = n_distinct(Concept)) %>%
+  arrange(desc(gene)) 
+GI_mean_gene_by_articles.tdf
+# GI_mean_gene_by_articles.tdf %>%
+#   summarise(Articles = n_distinct(PMID),gene_sum = sum(gene))
+```
+
+# Select for EGF
+```{r}
+GI.tdf %>%
+  filter(Concept %in% c('EGF','MET')) %>%
+  arrange(desc(Count))
+```
+
+
+#Load the co-words matrix
+#Find the count of once genes
+```{r ,warning=FALSE}
+co_word.m <- read.csv('./output/GI_metamap/GI_disease_gene_paircount_sp.csv',stringsAsFactors = F)
+co_summary_1st <- co_word.m %>%
+  as_tibble()%>%
+  filter(total == 1)
+  
+nrow(co_summary_1st)
+```
+
+#Summary by different cancer type
+```{r}
+co_summary_1st %>%
+  gather(key = 'cancer',value = 'Count',-Gene) %>%
+  filter(! Count == 0) %>%
+  group_by(cancer) %>%
+  summarise(n())
+
+```
+
+#Make Concept Demo
+```{r}
+cancer_name <- c("Liver cancer","Stomach cancer" ,"Bile duct cancer",
+                 "Esophageal cancer","Pancreatic Cancer","Colorectal cancer")
+Metamap_demo <- GI.tdf %>%
+  filter(PMID %in% c('1386555','21393565','22646534')) %>% 
+  arrange(desc(PMID))
+   
+Metamap_demo_count <-   Metamap_demo %>% 
+  pairwise_count(Concept, PMID,sort = TRUE) %>%
+  #filter make item1 only gets cancer, item2 only gets genes
+  filter(item1 %in% cancer_name) %>% 
+  filter(!item2 %in% cancer_name )
+
+write.csv(Metamap_demo,
+          file = 'Metamap_demo.csv',
+          row.names = F,quote = F)
+
+write.csv(Metamap_demo_count,
+          file = 'Metamap_demo_count.csv',
+          row.names = F,quote = F)
+
+Metamap_demo
+```
+

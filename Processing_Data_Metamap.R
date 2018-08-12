@@ -8,13 +8,236 @@ library(scales)
 library(lubridate)
 library(topicmodels)
 
+options(stringsAsFactors = F)
+cas9.df <- read.delim('D:/wyq/paperNetwork/data/result/rdata/conceptsInFile2_all.txt',sep = '\t')
 
-cas9.df <- read.delim('./cas9_metamap/conceptsInFile2.txt',sep = '\t')
-
-colnames(cas9.df) <- c('PMID','Date','Concept','Count')
+colnames(cas9.df) <- c('PMID','Date','Concept','Count','SMtype','Category')
 
 cas9.tdf <- tibble::as.tibble(cas9.df)
 
+#Make 100 PMID for annotation
+PMID100 <- sample(unique(cas9.tdf$PMID),100)
+#Output PMID100
+write(PMID100,file = 'annotation100.txt')
+#Count the concepts in different category
+cas9.tdf_100 <- cas9.tdf %>%
+  filter(PMID %in% PMID100)
+table(cas9.tdf_100$Category)
+
+#PMID 
+#Filter with gene,species and disease
+cas9.tdf <- cas9.tdf %>%
+  filter(Category %in% c('Disease_pathologic','Material_gene','Material_species'))
+
+disease_name <- cas9.tdf[cas9.tdf$Category=='Disease_pathologic',]$Concept
+gene_name <- cas9.tdf[cas9.tdf$Category=='Material_gene',]$Concept
+species_name <- cas9.tdf[cas9.tdf$Category=='Material_species',]$Concept
+
+#Filter by concept using top10 tfidf score
+tf_idf <- cas9.tdf %>%
+  bind_tf_idf(PMID, Concept, Count) %>%
+  arrange(desc(tf_idf))
+
+tf_idf_top10 <- tf_idf %>%
+  group_by(PMID) %>%
+  #filter(PMID==25775608)
+  arrange(desc(PMID))%>%
+  top_n(10)
+
+#To see gene and disease relationship by PMI
+abs_word_pairs_PMI <- tf_idf_top10 %>%
+  #filter(Category %in% c('Material_gene','Material_species')) %>%
+  pairwise_pmi(Concept,PMID,sort = TRUE) %>%
+  filter(item1 %in% species_name) %>%
+  #filter(item1 %in% gene_name) %>%
+  filter(item2 %in% disease_name)
+
+
+abs_word_pairs_PMI %>%
+  head(100) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = pmi, edge_width = pmi), edge_colour = "cyan4") +
+  geom_node_point(size = 1) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  labs(title = "PMI Concepts in abstract") +
+  theme_void()
+
+
+abs_word_pairs_cor <- cas9.tdf %>%
+  #filter(Concept %in% index) %>%
+  #filter(Count >5) %>%
+  pairwise_cor(Concept,PMID,Count)%>%
+  arrange(desc(correlation)) 
+
+abs_word_pairs_cor %>%
+  filter(item1 %in% species_name) %>%
+  #filter(item1 %in% gene_name) %>%
+  filter(item2 %in% disease_name) %>%
+  head(100)%>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = correlation, edge_width = correlation), edge_colour = "cyan4") +
+  geom_node_point(size = 1) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  labs(title = "Top100_Relationship_by_Phi_coefficient") +
+  theme_void()
+
+
+
+
+# word relationship--------------------------
+library(widyr)
+library(igraph)
+library(ggraph)
+
+cas9_perfile.tdf <- cas9.tdf %>%
+  group_by(Concept) %>%
+  mutate(count_total = sum(Count)) %>%
+  #summarise(count_file = n())
+  #count(Concept) %>%
+  arrange(desc(count_total)) %>%
+  count(Concept,count_total) %>%
+  arrange(desc(count_total)) 
+  
+table(cas9.tdf$Category)
+#Choose different category for filter
+
+abs_word_pairs <- cas9.tdf %>%
+  filter(Category %in% c('Material_gene','Disease_pathologic')) %>%
+  pairwise_count(Concept,PMID,sort = TRUE)
+
+set.seed(42)
+abs_word_pairs %>%
+  head(100) %>%
+  #filter(n < 10) %>%
+  #filter(n >= 10) %>%
+  #filter(n < 25) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
+  geom_node_point(size = 1) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  labs(title = "Co_occurance Concepts in abstract") +
+  theme_void()
+
+#PMI
+abs_word_pairs_PMI <- cas9.tdf %>%
+  filter(Category %in% c('Material_gene','Disease_pathologic')) %>%
+  pairwise_pmi(Concept,PMID,sort = TRUE)
+
+
+abs_word_pairs_PMI %>%
+  head(100) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = pmi, edge_width = pmi), edge_colour = "cyan4") +
+  geom_node_point(size = 1) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  labs(title = "PMI Concepts in abstract") +
+  theme_void()
+
+abs_word_pairs_cor <- cas9.tdf %>%
+  #filter(Concept %in% index) %>%
+  #filter(Count >5) %>%
+  pairwise_cor(Concept,PMID,Count)%>%
+  arrange(desc(correlation))
+
+abs_word_pairs_cor %>%
+  #filter(correlation > 0.1) %>%
+  #filter(item1 %in% c('Pancreatic Cancer')) %>%
+  head(100)%>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = correlation, edge_width = correlation), edge_colour = "cyan4") +
+  geom_node_point(size = 1) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  labs(title = "Top100_Relationship_by_Phi_coefficient") +
+  theme_void()
+
+
+abs_word_pairs_cosine <- cas9.tdf %>%
+  #filter(Count >5) %>%
+  pairwise_similarity(Concept,PMID,Count) %>%
+  arrange(desc(similarity))
+
+abs_word_pairs_cosine %>%
+  head(100)%>%
+  #filter(similarity > 0.5) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = similarity, edge_width = similarity), edge_colour = "cyan4") +
+  geom_node_point(size = 1) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  labs(title = "Top100_Relationship_by_cosine_similarty") +
+  theme_void()
+
+
+
+#TFIDF --------------------------------------
+
+
+tf_idf <- cas9.tdf %>%
+  bind_tf_idf(PMID, Concept, Count) %>%
+  arrange(desc(tf_idf))
+
+abs_word_pairs_cosine_tfidf <- tf_idf %>%
+  #filter(Count >5) %>%
+  pairwise_similarity(Concept,PMID,tf_idf) %>%
+  arrange(desc(similarity))
+
+#get smtype and concept
+smtype_concept <- tf_idf %>%
+  count(Concept,SMtype) %>%
+  group_by(Concept)
+
+
+abs_word_pairs_cosine_tfidf %>%
+  head(100) %>%
+  #filter(similarity > 0.5) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = similarity, edge_width = similarity), edge_colour = "cyan4") +
+  geom_node_point(size = 1) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  labs(title = "Top100_Relationship_by_cosine_similarty_TFIDF") +
+  theme_void()
+
+tf_idf_gene <- tf_idf %>%
+  filter(Category == 'Material_gene')
+
+
+#See the top10 tfidf in each pmid
+tf_idf_top10 <- tf_idf %>%
+  group_by(PMID) %>%
+  filter(PMID==25775608)
+  arrange(desc(PMID))%>%
+  top_n(10)
+
+
+#Select some PMID to show
+PMID_list = sample(tf_idf$PMID,4)
+
+tf_idf_pmid <- tf_idf %>%
+  filter(PMID %in% PMID_list)
+#not good view now
+tf_idf_pmid %>%
+  group_by(PMID) %>%
+  top_n(10, tf_idf) %>%
+  ungroup() %>%
+  mutate(Concept = reorder(Concept, tf_idf)) %>%
+  ggplot(aes(Concept, tf_idf, fill = PMID)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ PMID, scales = "free") +
+  ylab("tf-idf in abstracts") +
+  coord_flip()
 
 #Shrinking and Growing words------------------------------------------
 lct <- Sys.getlocale("LC_TIME"); Sys.setlocale("LC_TIME", "C")
@@ -126,53 +349,6 @@ top_terms %>%
   labs(title = "Top 10 terms in each LDA topic",
        x = NULL, y = expression(beta)) +
   facet_wrap(~ topic, ncol = 5, scales = "free") 
-
-# word relationship--------------------------
-library(widyr)
-library(igraph)
-library(ggraph)
-
-abs_word_pairs <- cas9.tdf %>%
-  pairwise_count(Concept,PMID,sort = TRUE)
-
-set.seed(42)
-abs_word_pairs %>%
-  #filter(n < 10) %>%
-  filter(n >= 5) %>%
-  graph_from_data_frame() %>%
-  ggraph(layout = "fr") +
-  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
-  geom_node_point(size = 1) +
-  geom_node_text(aes(label = name), repel = TRUE, 
-                 point.padding = unit(0.2, "lines")) +
-  labs(title = "Bigrams in abstract") +
-  theme_void()
-
-
-
-#TFIDF --------------------------------------
-
-
-tf_idf <- cas9.tdf %>%
-  bind_tf_idf(PMID, Concept, Count) %>%
-  arrange(desc(tf_idf))
-
-#Select some PMID to show
-PMID_list = sample(tf_idf$PMID,4)
-
-tf_idf_pmid <- tf_idf %>%
-  filter(PMID %in% PMID_list)
-#not good view now
-tf_idf_pmid %>%
-  group_by(PMID) %>%
-  top_n(10, tf_idf) %>%
-  ungroup() %>%
-  mutate(Concept = reorder(Concept, tf_idf)) %>%
-  ggplot(aes(Concept, tf_idf, fill = PMID)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~ PMID, scales = "free") +
-  ylab("tf-idf in abstracts") +
-  coord_flip()
 
 
 
