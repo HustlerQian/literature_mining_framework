@@ -5,6 +5,7 @@ library(igraph)
 library(ggraph)
 library(tidygraph)
 library(scales)
+library(Cairo)
 setwd('D:/GitHub/literature_mining_framework/')
 output_path <- "./output/GI_metamap/"
 load('./GI.RData')
@@ -299,73 +300,199 @@ mygraph_tidy %>%
                  point.padding = unit(1, "lines"))+
   theme_graph()
 
-pdf('Three_methods_spearman_coeffient_by_cancer_types.pdf')
+#pdf('Three_methods_spearman_coeffient_by_cancer_types.pdf')
+
+# pdf(file = paste0(normalizePath('D:/wyq/消化道肿瘤热点基因文献挖掘/pics/'),
+#            'Spearman_Correlationship_four_methods.pdf'),
+#     paper = 'a4r')
+#Correlationship plot for 4 method and 6 cancers.-----------------------
+#Change the color palette
+#col <- colorRampPalette(c("blue", "white", "red"))
+
+col <- colorRampPalette(c("#7F0000", "red", 
+                          "white",
+                         "blue","#00007F"))
+#Change the par margin form of layout
+par(mfrow = c(2,2))
+
 
 #Spearman PHI correlationship for by different cancer type-------------------------
 library(corrplot)
 
 #View(abs_word_pairs_phi_sp)
-
-Phi_cor_spearman <- signif(cor(abs_word_pairs_phi_sp[,-1],method = "spearman"),2)
+cor.m <- abs_word_pairs_phi_sp[,-1]
+colnames(cor.m) <- c("Bile duct" ,
+                     "Colorectal" ,
+                     "Esophageal" ,
+                     "Liver" , 
+                     "Pancreatic" ,
+                     "Stomach")
+Phi_cor_spearman <- signif(cor(cor.m,method = "spearman"),3)
 
 corrplot(Phi_cor_spearman,
          method = "color",
          type = "upper",
-         addCoef.col = 'black',
-         title = ''
-         #title = 'Phi spearman coeffient by different cancer types'
+         col = col(50),
+         tl.pos = "d",
+         mar=c(0,0,1.5,1),
+         title = 'A. Phi spearman coeffient',
+         cl.length = 11
          )
 
-text(1,1,'Phi spearman coeffient')
+corrplot(Phi_cor_spearman, 
+         add = TRUE, 
+         type = "lower", 
+         method = "number", 
+         diag = FALSE, 
+         col = "black",
+         tl.pos = "n", 
+         mar=c(0,0,1.5,1),
+         cl.pos = "n")
+#Old style for backup---------------------
+# dev.off()
+# text(1,1,'Phi spearman coeffient')
+
+#Use whole matrix corrplot
+# corrplot.mixed(Phi_cor_spearman, 
+#                addCoef.col = 'black',
+#                upper = "ellipse")
+#Test for PerformanceAnalytics style correlationship plot
+# library(PerformanceAnalytics)
+# chart.Correlation(Phi_cor_spearman, histogram=TRUE, pch=19)
 
 #Spearman PMI correlationship for by different cancer type-------------------------
 
 #View(abs_word_pairs_PMI_sp)
 
-PMI_cor_spearman <- signif(cor(abs_word_pairs_PMI_sp[,-1],method = "spearman"),2)
+# PMI_cor_spearman <- signif(cor(abs_word_pairs_PMI_sp[,-1],method = "spearman"),2)
+# 
+# corrplot(PMI_cor_spearman,
+#          method = "color",
+#          type = "upper",
+#          addCoef.col = 'black',
+#          title = ''
+#          #title = 'PMI spearman coeffient by different cancer types'
+#          )
+# 
+# text(1,1,'PMI spearman coeffient')
+cor.m <- abs_word_pairs_PMI_sp[,-1]
+colnames(cor.m) <- c("Bile duct" ,
+                     "Colorectal" ,
+                     "Esophageal" ,
+                     "Liver" , 
+                     "Pancreatic" ,
+                     "Stomach")
+PMI_cor_spearman <- signif(cor(cor.m,method = "spearman"),3)
 
 corrplot(PMI_cor_spearman,
          method = "color",
          type = "upper",
-         addCoef.col = 'black',
-         title = ''
-         #title = 'PMI spearman coeffient by different cancer types'
-         )
+         col = col(50),
+         tl.pos = "d",
+         mar=c(0,0,1.5,1),
+         title = 'B. PMI spearman coeffient',
+         cl.length = 11
+)
 
-text(1,1,'PMI spearman coeffient')
-
+corrplot(PMI_cor_spearman, 
+         add = TRUE, 
+         type = "lower", 
+         method = "number", 
+         diag = FALSE, 
+         col = "black",
+         tl.pos = "n", 
+         mar=c(0,0,1.5,1),
+         cl.pos = "n")
 #Spearman Cosine correlationship for by different cancer type-------------------------
 
 #View(abs_word_pairs_cosine_tfidf_sp)
 
-Cosine_cor_spearman <- signif(cor(abs_word_pairs_cosine_tfidf_sp[,-1],method = "spearman"),2)
+# Cosine_cor_spearman <- signif(cor(abs_word_pairs_cosine_tfidf_sp[,-1],method = "spearman"),2)
+# 
+# corrplot(Cosine_cor_spearman,
+#          method = "color",
+#          type = "upper",
+#          addCoef.col = 'black',
+#          title = ''
+#          #title = 'Cosine spearman coeffient by different cancer types'
+#          )
+# 
+# text(1,1,'Cosine spearman coeffient')
+cor.m <- abs_word_pairs_cosine_tfidf_sp[,-1]
+colnames(cor.m) <- c("Bile duct" ,
+                     "Colorectal" ,
+                     "Esophageal" ,
+                     "Liver" , 
+                     "Pancreatic" ,
+                     "Stomach")
+Cosine_cor_spearman <- signif(cor(cor.m,method = "spearman"),3)
 
 corrplot(Cosine_cor_spearman,
          method = "color",
          type = "upper",
-         addCoef.col = 'black',
-         title = ''
-         #title = 'Cosine spearman coeffient by different cancer types'
-         )
+         col = col(50),
+         tl.pos = "d",
+         mar=c(0,0,1.5,1),
+         title = 'C. Cosine spearman coeffient',
+         cl.length = 11
+)
 
-text(1,1,'Cosine spearman coeffient')
-
+corrplot(Cosine_cor_spearman, 
+         add = TRUE, 
+         type = "lower", 
+         method = "number", 
+         diag = FALSE, 
+         col = "black",
+         tl.pos = "n", 
+         mar=c(0,0,1.5,1),
+         cl.pos = "n")
 #Spearman Cosine correlationship for by different cancer type-------------------------
 
 #View(abs_word_pairs_cosine_sp)
 
-Cosine_tfidf_cor_spearman <- signif(cor(abs_word_pairs_cosine_sp[,-1],method = "spearman"),2)
+# Cosine_tfidf_cor_spearman <- signif(cor(abs_word_pairs_cosine_sp[,-1],method = "spearman"),2)
+# 
+# corrplot(Cosine_tfidf_cor_spearman,
+#          method = "color",
+#          type = "upper",
+#          addCoef.col = 'black',
+#          title = ''
+#          #title = 'Cosine spearman coeffient by different cancer types'
+# )
+# 
+# text(1,1,'Cosine tfidf spearman coeffient')
+cor.m <- abs_word_pairs_cosine_sp[,-1]
+colnames(cor.m) <- c("Bile duct" ,
+                     "Colorectal" ,
+                     "Esophageal" ,
+                     "Liver" , 
+                     "Pancreatic" ,
+                     "Stomach")
+Cosine_tfidf_cor_spearman <- signif(cor(cor.m,method = "spearman"),3)
 
 corrplot(Cosine_tfidf_cor_spearman,
          method = "color",
          type = "upper",
-         addCoef.col = 'black',
-         title = ''
-         #title = 'Cosine spearman coeffient by different cancer types'
+         col = col(50),
+         tl.pos = "d",
+         mar=c(0,0,1.5,1),
+         title = 'D. Cosine tfidf spearman coeffient',
+         cl.length = 11
 )
 
-text(1,1,'Cosine tfidf spearman coeffient')
+corrplot(Cosine_tfidf_cor_spearman, 
+         add = TRUE, 
+         type = "lower", 
+         method = "number", 
+         diag = FALSE, 
+         col = "black",
+         tl.pos = "n", 
+         mar=c(0,0,1.5,1),
+         cl.pos = "n")
 
+
+#Change the par margin form of layout
+par(mfrow = c(3,2))
 #Spearman Bile duct cancer by three methods--------------------
 #Use full_join to join
 BTC_cor_spearman <- abs_word_pairs_phi_sp %>%
@@ -379,15 +506,36 @@ BTC_cor_spearman <- abs_word_pairs_phi_sp %>%
                     replace(is.na(.),0) 
 colnames(BTC_cor_spearman) <- c('Genes','Phi','PMI','Cosine','Cosine_tfidf')
 
-BTC_cor_spearman <- signif(cor(BTC_cor_spearman[,-1],method = "spearman"),2)
+# BTC_cor_spearman <- signif(cor(BTC_cor_spearman[,-1],method = "spearman"),2)
+# 
+# corrplot(BTC_cor_spearman,
+#          method = "color",
+#          type = "upper",
+#          addCoef.col = 'black',
+#          title = ''
+# )
+# text(1,1,'Bile duct cancer spearman coeffient')
+BTC_cor_spearman <- signif(cor(BTC_cor_spearman[,-1],method = "spearman"),3)
 
 corrplot(BTC_cor_spearman,
          method = "color",
          type = "upper",
-         addCoef.col = 'black',
-         title = ''
+         col = col(50),
+         tl.pos = "d",
+         mar=c(0,0,1.5,1),
+         title = 'A. Bile duct cancer spearman coeffient',
+         cl.length = 11
 )
-text(1,1,'Bile duct cancer spearman coeffient')
+
+corrplot(BTC_cor_spearman, 
+         add = TRUE, 
+         type = "lower", 
+         method = "number", 
+         diag = FALSE, 
+         col = "black",
+         tl.pos = "n", 
+         mar=c(0,0,1.5,1),
+         cl.pos = "n")
 
 #Spearman Colorectal cancer by three methods--------------------
 #Use full_join to join
@@ -402,15 +550,36 @@ COAD_cor_spearman <- abs_word_pairs_phi_sp %>%
   replace(is.na(.),0) 
 colnames(COAD_cor_spearman) <- c('Genes','Phi','PMI','Cosine','Cosine_tfidf')
 
-COAD_cor_spearman <- signif(cor(COAD_cor_spearman[,-1],method = "spearman"),2)
+# COAD_cor_spearman <- signif(cor(COAD_cor_spearman[,-1],method = "spearman"),2)
+# 
+# corrplot(COAD_cor_spearman,
+#          method = "color",
+#          type = "upper",
+#          addCoef.col = 'black',
+#          title = ''
+# )
+# text(1,1,'Colorectal cancer spearman coeffient')
+COAD_cor_spearman <- signif(cor(COAD_cor_spearman[,-1],method = "spearman"),3)
 
 corrplot(COAD_cor_spearman,
          method = "color",
          type = "upper",
-         addCoef.col = 'black',
-         title = ''
+         col = col(50),
+         tl.pos = "d",
+         mar=c(0,0,1.5,1),
+         title = 'B. Colorectal cancer spearman coeffient',
+         cl.length = 11
 )
-text(1,1,'Colorectal cancer spearman coeffient')
+
+corrplot(COAD_cor_spearman, 
+         add = TRUE, 
+         type = "lower", 
+         method = "number", 
+         diag = FALSE, 
+         col = "black",
+         tl.pos = "n", 
+         mar=c(0,0,1.5,1),
+         cl.pos = "n")
 
 #Spearman Esophageal cancer by three methods--------------------
 #Use full_join to join
@@ -425,15 +594,37 @@ ESCA_cor_spearman <- abs_word_pairs_phi_sp %>%
   replace(is.na(.),0) 
 colnames(ESCA_cor_spearman) <- c('Genes','Phi','PMI','Cosine','Cosine_tfidf')
 
-ESCA_cor_spearman <- signif(cor(ESCA_cor_spearman[,-1],method = "spearman"),2)
+# ESCA_cor_spearman <- signif(cor(ESCA_cor_spearman[,-1],method = "spearman"),2)
+# 
+# corrplot(ESCA_cor_spearman,
+#          method = "color",
+#          type = "upper",
+#          addCoef.col = 'black',
+#          title = ''
+# )
+# text(1,1,'Esophageal cancer spearman coeffient')
+
+ESCA_cor_spearman <- signif(cor(ESCA_cor_spearman[,-1],method = "spearman"),3)
 
 corrplot(ESCA_cor_spearman,
          method = "color",
          type = "upper",
-         addCoef.col = 'black',
-         title = ''
+         col = col(50),
+         tl.pos = "d",
+         mar=c(0,0,1.5,1),
+         title = 'C. Esophageal cancer spearman coeffient',
+         cl.length = 11
 )
-text(1,1,'Esophageal cancer spearman coeffient')
+
+corrplot(ESCA_cor_spearman, 
+         add = TRUE, 
+         type = "lower", 
+         method = "number", 
+         diag = FALSE, 
+         col = "black",
+         tl.pos = "n", 
+         mar=c(0,0,1.5,1),
+         cl.pos = "n")
 
 #Spearman Liver cancer by three methods--------------------
 #Use full_join to join
@@ -448,15 +639,37 @@ LIHC_cor_spearman <- abs_word_pairs_phi_sp %>%
   replace(is.na(.),0) 
 colnames(LIHC_cor_spearman) <- c('Genes','Phi','PMI','Cosine','Cosine_tfidf')
 
-LIHC_cor_spearman <- signif(cor(LIHC_cor_spearman[,-1],method = "spearman"),2)
+# LIHC_cor_spearman <- signif(cor(LIHC_cor_spearman[,-1],method = "spearman"),2)
+# 
+# corrplot(LIHC_cor_spearman,
+#          method = "color",
+#          type = "upper",
+#          addCoef.col = 'black',
+#          title = ''
+# )
+# text(1,1,'Liver cancer spearman coeffient')
+
+LIHC_cor_spearman <- signif(cor(LIHC_cor_spearman[,-1],method = "spearman"),3)
 
 corrplot(LIHC_cor_spearman,
          method = "color",
          type = "upper",
-         addCoef.col = 'black',
-         title = ''
+         col = col(50),
+         tl.pos = "d",
+         mar=c(0,0,1.5,1),
+         title = 'D. Liver cancer spearman coeffient',
+         cl.length = 11
 )
-text(1,1,'Liver cancer spearman coeffient')
+
+corrplot(LIHC_cor_spearman, 
+         add = TRUE, 
+         type = "lower", 
+         method = "number", 
+         diag = FALSE, 
+         col = "black",
+         tl.pos = "n", 
+         mar=c(0,0,1.5,1),
+         cl.pos = "n")
 
 #Spearman Pancreatic Cancer by three methods--------------------
 #Use full_join to join
@@ -471,15 +684,37 @@ PAAD_cor_spearman <- abs_word_pairs_phi_sp %>%
   replace(is.na(.),0) 
 colnames(PAAD_cor_spearman) <- c('Genes','Phi','PMI','Cosine','Cosine_tfidf')
 
-PAAD_cor_spearman <- signif(cor(PAAD_cor_spearman[,-1],method = "spearman"),2)
+# PAAD_cor_spearman <- signif(cor(PAAD_cor_spearman[,-1],method = "spearman"),2)
+# 
+# corrplot(PAAD_cor_spearman,
+#          method = "color",
+#          type = "upper",
+#          addCoef.col = 'black',
+#          title = ''
+# )
+# text(1,1,'Pancreatic Cancer spearman coeffient')
+
+PAAD_cor_spearman <- signif(cor(PAAD_cor_spearman[,-1],method = "spearman"),3)
 
 corrplot(PAAD_cor_spearman,
          method = "color",
          type = "upper",
-         addCoef.col = 'black',
-         title = ''
+         col = col(50),
+         tl.pos = "d",
+         mar=c(0,0,1.5,1),
+         title = 'E. Pancreatic Cancer spearman coeffient',
+         cl.length = 11
 )
-text(1,1,'Pancreatic Cancer spearman coeffient')
+
+corrplot(PAAD_cor_spearman, 
+         add = TRUE, 
+         type = "lower", 
+         method = "number", 
+         diag = FALSE, 
+         col = "black",
+         tl.pos = "n", 
+         mar=c(0,0,1.5,1),
+         cl.pos = "n")
 
 #Spearman Stomach cancer by three methods--------------------
 #Use full_join to join
@@ -494,17 +729,38 @@ STAD_cor_spearman <- abs_word_pairs_phi_sp %>%
   replace(is.na(.),0) 
 colnames(STAD_cor_spearman) <- c('Genes','Phi','PMI','Cosine','Cosine_tfidf')
 
-STAD_cor_spearman <- signif(cor(STAD_cor_spearman[,-1],method = "spearman"),2)
+# STAD_cor_spearman <- signif(cor(STAD_cor_spearman[,-1],method = "spearman"),2)
+# 
+# corrplot(STAD_cor_spearman,
+#          method = "color",
+#          type = "upper",
+#          addCoef.col = 'black',
+#          title = ''
+# )
+# text(1,1,'Stomach cancer spearman coeffient')
+
+STAD_cor_spearman <- signif(cor(STAD_cor_spearman[,-1],method = "spearman"),3)
 
 corrplot(STAD_cor_spearman,
          method = "color",
          type = "upper",
-         addCoef.col = 'black',
-         title = ''
+         col = col(50),
+         tl.pos = "d",
+         mar=c(0,0,1.5,1),
+         title = 'F. Stomach cancer spearman coeffient',
+         cl.length = 11
 )
-text(1,1,'Stomach cancer spearman coeffient')
 
-dev.off()
+corrplot(STAD_cor_spearman, 
+         add = TRUE, 
+         type = "lower", 
+         method = "number", 
+         diag = FALSE, 
+         col = "black",
+         tl.pos = "n", 
+         mar=c(0,0,1.5,1),
+         cl.pos = "n")
+# dev.off()
 
 #Write to xlsx ------------------------------------------
 library(xlsx)
